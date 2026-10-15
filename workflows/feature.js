@@ -103,7 +103,7 @@ const impl = await agent([
   '',
   '## 끝내는 조건',
   '- 바꾼 파일을 전부 changedFiles 에 적는다. 계획과 달리 한 것과 하지 못한 것은 notes 에 적는다.',
-  '- 테스트는 쓰지 않는다 - 다음 단계가 쓴다. lint 도 다음 단계가 돌린다.',
+  '- 테스트 파일을 만들지 않는다 - Verify 단계가 계획의 시나리오로 쓴다. 둘이 쓰면 한쪽이 덮어써져 작업이 사라진다. lint 도 다음 단계가 돌린다.',
   '',
   STYLE,
 ].join('\n'), { label: 'implement', phase: 'Implement', schema: IMPL_SCHEMA })
@@ -186,6 +186,7 @@ const verifyTasks = [
   () => agent([
     '아래 시나리오에 해당하는 순수 로직의 단위 테스트를 쓰고 돌린다. .claude/skills/test-unit/SKILL.md 의 작성 단계와 .claude/rules/testing.md 의 형식을 따른다. 시나리오 합의 단계는 생략한다 - 사용자가 /feature 로 한 번에 돌리기로 했고, 시나리오 목록은 보고서에 그대로 실려 사람이 뒤에 확인한다.',
     '시나리오가 비어 있거나 전부 화면으로 확인 가능한 것이면 쓰지 않고 skipped 에 이유를 적는다.',
+    '대상 테스트 파일이 이미 있으면 덮어쓰지 않는다 - 기존 케이스는 그대로 두고 빠진 시나리오만 추가한다. 사람이 쓴 테스트가 사라지면 복구할 수 없다.',
     '테스트를 통과시키려고 구현을 바꾸지 않는다. 실패하면 output 에 실패 출력을 요약한다.',
     '변경 파일: ' + changed.join(', '),
     '시나리오:', ...(plan.scenarios.length ? plan.scenarios.map(s => '- ' + s) : ['- (없음)']),
