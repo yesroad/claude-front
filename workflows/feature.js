@@ -1,7 +1,7 @@
 export const meta = {
   name: 'feature',
-  description: '작업 설명 하나로 계획 → 구현 → 병렬 검증(lint, code-reviewer, a11y-checker, 단위 테스트) → review.md 까지. 수정과 커밋은 사람이 정한다',
-  whenToUse: '/feature <작업 설명>. 선택 인자: --autofix (P0, P1 을 1회 자동 수정 후 재검증), --scope <이름>. args 는 {task, autofix, scope} 객체 또는 작업 설명 문자열',
+  description: '작업 설명 하나로 계획 → 구현 → lint 게이트 → 병렬 검증(code-reviewer, a11y-checker, 단위 테스트) → review.md 까지. 수정과 커밋은 사람이 정한다',
+  whenToUse: '/feature <작업 설명>. 선택 인자: --autofix (P0, P1 을 1회 자동 수정 후 재검증), --scope <이름>. args 는 {task, autofix, scope} 객체 또는 작업 설명 문자열. 단위 테스트는 사람과 합의 없이 계획 단계의 시나리오로 쓴다 - /feature 를 돌린 것이 그 합의다',
   phases: [
     { title: 'Plan', detail: '코드베이스를 읽고 변경 계획과 요구사항 빈틈을 낸다' },
     { title: 'Implement', detail: '계획대로 구현한다 (에이전트 1개)' },
@@ -129,6 +129,17 @@ const lintPrompt = [
   '대상 파일: ' + changed.join(', '),
 ].join('\n')
 const lint = await agent(lintPrompt, { label: 'lint', phase: 'Verify', schema: LINT_SCHEMA, effort: 'low' })
+// /check 와 같은 게이트: 린트나 타입 오류가 남으면 검토로 넘어가지 않는다 - 타입이 안 맞는 코드 위에서는 지적이 갈라진다.
+if (!lint || !lint.passed) {
+  log('lint 게이트 실패 - 검토를 시작하지 않는다')
+  return {
+    status: 'lint-failed',
+    scope,
+    changedFiles: changed,
+    lint: lint ? { fixed: lint.fixed, remaining: lint.remaining } : null,
+    next: '남은 오류를 고친 뒤 /check ' + scope + ' 로 검토를 이어간다. 구현은 작업 트리에 남아 있다.',
+  }
+}
 
 const REVIEW_SCHEMA = {
   type: 'object',
@@ -173,7 +184,7 @@ function reviewPrompt(kind) {
 const verifyTasks = [
   () => agent(reviewPrompt('code'), { label: 'code-reviewer', phase: 'Verify', agentType: 'code-reviewer', schema: REVIEW_SCHEMA }),
   () => agent([
-    '아래 시나리오에 해당하는 순수 로직의 단위 테스트를 쓰고 돌린다. .claude/skills/test-unit/SKILL.md 의 작성 단계와 .claude/rules/testing.md 의 형식을 따른다.',
+    '아래 시나리오에 해당하는 순수 로직의 단위 테스트를 쓰고 돌린다. .claude/skills/test-unit/SKILL.md 의 작성 단계와 .claude/rules/testing.md 의 형식을 따른다. 시나리오 합의 단계는 생략한다 - 사용자가 /feature 로 한 번에 돌리기로 했고, 시나리오 목록은 보고서에 그대로 실려 사람이 뒤에 확인한다.',
     '시나리오가 비어 있거나 전부 화면으로 확인 가능한 것이면 쓰지 않고 skipped 에 이유를 적는다.',
     '테스트를 통과시키려고 구현을 바꾸지 않는다. 실패하면 output 에 실패 출력을 요약한다.',
     '변경 파일: ' + changed.join(', '),

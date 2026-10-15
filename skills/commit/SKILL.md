@@ -12,9 +12,9 @@ allowed-tools: Agent, Bash, Read, Write, AskUserQuestion
 
 ## Workflow
 
-1. scope 와 스테이지 확인. `$ARGUMENTS`가 있으면 그것, 없으면 현재 브랜치 이름에서 접두어를 뗀 것(`feat/slot-list` → `slot-list`), `main`이면 메시지의 scope 는 생략하고 작업 폴더 이름은 `wip`(`/check`와 같다). `git diff --cached --quiet`가 exit 0(스테이지 없음)이면 "먼저 `git add <파일>`"을 안내하고 종료한다 - `git add -A`를 대신 실행하지 않는다.
+1. scope 와 스테이지 확인. `$ARGUMENTS`가 있으면 그것, 없으면 현재 브랜치 이름에서 접두어를 뗀 것(`feat/slot-list` → `slot-list`), `main`이면 작업 폴더 이름은 `wip`(`/check`와 같다)이고 에이전트에는 scope 로 `없음`을 넘겨 메시지에서 생략하게 한다. `git diff --cached --quiet`가 exit 0(스테이지 없음)이면 "먼저 `git add <파일>`"을 안내하고 종료한다 - `git add -A`를 대신 실행하지 않는다.
 2. 게이트. `/lint`와 같은 방식으로 린트와 타입 검사를 실행한다. `git diff --cached --name-only`에 `src/` 또는 `app/` 아래 파일이 있으면 테스트(`test` 스크립트 또는 `vitest --run`)도 실행하고, 문서와 설정만 바뀌었으면 "테스트 생략(코드 변경 없음)" 한 줄로 알린다. 실패하면 출력을 보여주고 중단한다 - 이 스킬은 고치지 않는다.
-3. 초안. Agent 도구로 `commit-author`를 부르고 scope 를 넘긴다. 에이전트는 읽기 전용이라 초안을 텍스트로 돌려준다. 받은 본문을 그대로 `.claude/_workspace/<작업 폴더>/commit-draft.md`에 쓴다 - `git commit -F`가 읽을 파일이다.
+3. 초안. Agent 도구로 `commit-author`를 부르고 scope(또는 `없음`)를 넘긴다. 에이전트는 읽기 전용이라 초안을 텍스트로 돌려준다. 받은 본문을 그대로 `.claude/_workspace/<작업 폴더>/commit-draft.md`에 쓴다 - `git commit -F`가 읽을 파일이다.
 4. 표시. 초안을 그대로 보여준다. `SPLIT_REQUIRED`면 분리 제안만 전달하고 종료한다.
 5. 확인. `AskUserQuestion`으로 한 번 묻는다 - "이 메시지로 커밋 / 수정할 내용 / 취소". 수정 요청이면 반영해 다시 보여준다(최대 2회).
 6. 커밋. 확인을 받으면 `git commit -F .claude/_workspace/<작업 폴더>/commit-draft.md`를 실행하고 `git log -1 --oneline`을 보여준다. push 는 하지 않는다.

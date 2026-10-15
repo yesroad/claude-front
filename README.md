@@ -29,7 +29,7 @@ echo ".claude/" >> .gitignore     # 프로젝트 저장소에는 올리지 않�
 | skill | `/commit [scope]` | 게이트 → commit-author 초안 → 확인 → 커밋 |
 | skill | `/test-unit`, `/test-integration`, `/test-e2e` | 시나리오 합의 후 테스트 작성과 실행 |
 | skill | `/web-design [화면]` | 톤 → HTML 목업 → 토큰 → 구현 → QA |
-| workflow | `/feature <작업 설명>` | 계획 → 구현 → 병렬 검증(lint, 검토자 2, 단위 테스트) → `review.md`. 빈틈이 있으면 구현 전에 멈춘다. `--autofix` 로 P0/P1 1회 자동 수정 |
+| workflow | `/feature <작업 설명>` | 계획 → 구현 → lint 게이트 → 병렬 검증(검토자 2, 단위 테스트) → `review.md`. 빈틈이 있으면 구현 전에, lint 오류가 남으면 검토 전에 멈춘다. `--autofix` 로 P0/P1 1회 자동 수정 |
 | agent | `code-reviewer`(opus), `a11y-checker`(sonnet), `commit-author`(sonnet) | 스킬이 호출. 전부 읽기 전용 |
 | hook | SessionStart `auto-pull`, PreToolUse `guard-pretool`, Notification/Stop `notify` | 자동 |
 
