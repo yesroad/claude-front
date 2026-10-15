@@ -12,7 +12,7 @@ allowed-tools: Read, Grep, Glob, Write, Bash
 
 ## Workflow
 
-1. 환경 확인. `playwright.config.*`와 `@playwright/test` 유무를 본다. 없으면 `npm init playwright@latest` 실행 여부를 한 번 묻는다 - 임의로 설치하지 않는다. `webServer` 설정과 `baseURL`을 확인한다.
+1. 환경 확인. `playwright.config.*`와 `@playwright/test` 유무를 본다. 없으면 lock 파일로 정한 패키지 매니저의 초기화 명령(`pnpm create playwright`, `npm init playwright@latest`) 실행 여부를 한 번 묻는다 - 임의로 설치하지 않는다. `webServer` 설정과 `baseURL`을 확인한다.
 2. 여정 도출. `$ARGUMENTS`(여정 이름)에서 시작 화면 → 행동 → 기대 결과를 Given-When-Then 으로 만들어 보여주고 합의를 받는다. 여정 하나에 테스트 1~3건. 합의 전에는 코드를 쓰지 않는다.
 3. 작성. `e2e/<여정>.spec.ts`(또는 프로젝트의 기존 디렉터리). 로케이터는 `getByRole`, `getByLabel`, `getByText` 우선, `data-testid`는 최후. 인증은 `storageState`를 한 번 만들어 재사용한다. 외부 API 는 `page.route`로 모킹하고 자기 앱의 요청은 그대로 둔다. 단언은 `expect(locator)` 자동 대기형만 - `waitForTimeout`을 쓰지 않는다.
 4. 실행. `playwright test <파일>`. 실패하면 trace(`--trace on`)를 열어 원인을 한 줄로 요약해 보여준다. 통과시키려고 구현을 바꾸지 않는다 - 2회 반복되면 멈추고 보고한다.

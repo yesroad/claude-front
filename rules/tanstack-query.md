@@ -5,13 +5,12 @@ paths:
 ---
 # TanStack Query - 쿼리 정의 규칙 (React 어댑터 v5, 클라이언트 fetch 전용)
 
-- 쿼리 키는 `queries/<domain>.query.ts` 팩토리 한 곳에서만 만든다. 컴포넌트, 훅, 테스트 어디에도 문자열 리터럴 키를 쓰지 않는다 - 흩어진 키는 오타 하나로 캐시가 갈라지고 컴파일이 잡지 못한다.
+- 쿼리 키는 `queries/<domain>.query.ts` 팩토리 한 곳에서만 만든다. 컴포넌트, 훅, 테스트, 뮤테이션 뒤 `invalidateQueries` 어디에도 문자열 리터럴 키를 쓰지 않는다 - 흩어진 키는 오타 하나로 캐시가 갈라지고 컴파일이 잡지 못한다.
 - 팩토리는 `queryOptions()`로 키와 `queryFn`을 한 객체로 내보낸다. `useQuery`, `useSuspenseQuery`, `queryClient.query`는 그 객체를, `getQueryData`와 `setQueryData`는 그 `.queryKey`를 그대로 쓴다 - 키에 데이터 타입이 따라붙어 `getQueryData`와 `setQueryData`가 `unknown`이 아니다.
 - `queryFn`은 서비스 함수를 부른다. fetch 호출과 응답 가공을 쿼리 정의 안에 쓰지 않는다 - 쿼리 파일에는 키와 캐시 정책만 남아야 서버 컴포넌트와 테스트가 같은 서비스 함수를 쓴다.
 - 서버 상태를 `useState`에 복사하지 않는다. 가공은 `select`나 렌더 중 계산으로 한다 - 복사본은 refetch 와 invalidate 를 따라오지 않아 화면이 캐시와 어긋난다.
 - QueryClient 기본값(`staleTime`, `retry`, `refetchOnWindowFocus`)은 `decisions.md`에서 정한 값을 쓴다. 쿼리 하나만 다르게 하려면 이유를 주석으로 적는다 - 기본값이 쿼리마다 흩어지면 어느 화면이 왜 다시 가져오는지 추적이 안 된다.
-- 뮤테이션 뒤 `invalidateQueries`에 넘기는 `queryKey`도 팩토리에서 가져온다 - 손으로 쓴 키는 팩토리가 바뀌어도 에러 없이 빗나가 화면만 갱신되지 않는다.
-- 서버 컴포넌트가 렌더에 쓰는 데이터는 Query 로 감싸지 않는다. 서버 쪽 캐시는 `'use cache'`가 맡고, Query 는 클라이언트에서 fetch 하는 서버 상태(입력에 따른 재조회, 폴링, 뮤테이션 뒤 갱신)에만 쓴다 - Next 16.4부터 Cache Components 가 권장 모델이고, 같은 데이터가 두 캐시에 있으면 무효화도 두 곳에서 해야 한다.
+- 서버 컴포넌트가 렌더에 쓰는 데이터는 Query 로 감싸지 않는다. 서버 쪽 캐시는 `'use cache'`가 맡고, Query 는 클라이언트에서 fetch 하는 서버 상태(입력에 따른 재조회, 폴링, 뮤테이션 뒤 갱신)에만 쓴다 - Next 16.4 부터 Cache Components 가 권장 모델이고, 같은 데이터가 두 캐시에 있으면 무효화도 두 곳에서 해야 한다.
 
 ## 틀리기 쉬운 것 (2026-10 기준)
 

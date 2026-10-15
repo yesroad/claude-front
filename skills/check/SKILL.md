@@ -1,6 +1,6 @@
 ---
 name: check
-description: "/lint 로 타입과 린트를 정리한 뒤 방금 구현한 변경(scope)을 code-reviewer 가 검토하고, 화면이 바뀌었으면 a11y-checker 가 함께 본다. 파일:줄과 재현 절차를 그대로 보여주고 .claude/_workspace/<scope>/review.md 에 남긴다. '리뷰', '검토', '봐줘', '문제 없나' 요청 시 사용. 코드를 고치지 않는다. 정확성 버그 사냥은 내장 /code-review, 커밋은 /commit 이 담당."
+description: "/lint 로 타입과 린트를 정리한 뒤 방금 구현한 변경(scope)을 code-reviewer 가 검토하고, 화면이 바뀌었으면 a11y-checker 가 함께 본다. 파일:줄과 재현 절차를 그대로 보여주고 .claude/_workspace/<scope>/review.md 에 남긴다. '리뷰', '검토', '봐줘', '문제 없나' 요청 시 사용. 검토 지적은 고치지 않는다(게이트의 `/lint`만 기계적 오류를 고친다). 정확성 버그 사냥은 내장 /code-review, 커밋은 /commit 이 담당."
 user-invocable: true
 argument-hint: "[scope]"
 allowed-tools: Agent, Bash, Read, Write, Skill
@@ -23,7 +23,7 @@ allowed-tools: Agent, Bash, Read, Write, Skill
 ## 작업 원칙
 
 - 이 스킬은 호출하고 받아 적고 보여주기만 한다. 판정 텍스트를 쓰지 않고 리뷰 지적을 고치지 않는다 - 리뷰어가 바로 고치면 사람이 재현하고 판단할 자리가 사라진다.
-- 게이트에서 `/lint`가 고치는 것은 기계가 판정하는 오류뿐이다. 설계 판단이 필요한 문제는 `/lint`가 손대지 않고 검토자에게 남긴다.
+- 게이트에서 `/lint`가 고치는 것은 컴파일러와 린터가 판정한 오류의 국소 수정뿐이다. 타입 구조나 동작을 바꿔야 하는 문제는 `/lint`가 남기고 검토자와 사람이 본다.
 - 테스트는 여기서 돌리지 않는다 - 시나리오 합의가 필요한 일이라 `/test-unit`이 맡고, 커밋 직전 `/commit`이 한 번 더 돌린다.
-- 쓰기는 `.claude/_workspace/<scope>/review.md` 하나뿐이다.
+- 이 스킬이 직접 쓰는 것은 `.claude/_workspace/<scope>/review.md` 하나뿐이다. 소스를 바꾸는 것은 게이트의 `/lint`가 기계적으로 판정되는 오류에 한해 하는 수정뿐이다.
 - 정확성 버그를 넓게 찾고 싶으면 내장 `/code-review`를 따로 돌린다 - 이 스킬은 소유자 규칙과 화면 UX, 접근성을 본다.

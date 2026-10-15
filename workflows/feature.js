@@ -199,20 +199,65 @@ if (autofix && findings.length > 0) {
     STYLE,
   ].join('\n'), { label: 'fix', phase: 'Fix', schema: IMPL_SCHEMA })
   const relint = await agent(lintPrompt, { label: 'lint (재검사)', phase: 'Fix', schema: LINT_SCHEMA, effort: 'low' })
-  const rereview = await agent(reviewPrompt('code') + '\n직전 지적이 해소됐는지 먼저 확인하고, 새로 생긴 문제만 추가로 적는다.', { label: 'code-reviewer (재검토)', phase: 'Fix', agentType: 'code-reviewer', schema: REVIEW_SCHEMA })
-  fixRound = { fixed: fix, lint: relint, review: rereview }
-  findings = (rereview && rereview.findings) || findings
+  const again = '\n직전 지적이 해소됐는지 먼저 확인하고, 새로 생긴 문제만 추가로 적는다.'
+  const reTasks = [() => agent(reviewPrompt('code') + again, { label: 'code-reviewer (재검토)', phase: 'Fix', agentType: 'code-reviewer', schema: REVIEW_SCHEMA })]
+  if (touchesUi) reTasks.push(() => agent(reviewPrompt('a11y') + again, { label: 'a11y-checker (재검토)', phase: 'Fix', agentType: 'a11y-checker', schema: REVIEW_SCHEMA }))
+  const [reCode, reA11y] = await parallel(reTasks)
+  // 재검토 결과가 있으면 그것으로 교체하고, 없으면(에이전트 실패) 이전 지적을 유지한다. 접근성 지적은 따로 유지한다.
+  codeReview = reCode || codeReview
+  if (touchesUi) a11yReview = reA11y || a11yReview
+  findings = [...((codeReview && codeReview.findings) || []), ...((a11yReview && a11yReview.findings) || [])]
+  fixRound = { fixed: fix, lint: relint }
   log('자동 수정 후 남은 지적 ' + findings.length + '건')
 }
 
 // ---- Report ---------------------------------------------------------------
+// 보고서 본문은 스크립트가 결정적으로 만든다. 에이전트는 파일로 옮기기만 한다 - 옮기는 과정에서 지적이 빠질 자리를 없앤다.
 phase('Report')
-const report = await agent([
-  '아래 결과를 .claude/_workspace/' + scope + '/review.md 에 쓴다 (폴더가 없으면 만든다). 형식은 /check 와 같다 - "## 동작" 절에 code-reviewer 지적, "## 접근성" 절에 a11y-checker 지적, 지적마다 "### [P0] 파일:줄 - 제목 / 근거. / 재현." 3줄. P2 는 개수만. 이어서 "## 테스트" 절에 테스트 결과, "## 변경 파일" 절에 파일 목록.',
-  '요약하거나 지적을 줄이지 않는다. 그대로 옮긴다. 마지막에 다음 단계 한 줄: "지적을 재현하고 고칠 항목을 지정한다. 고친 뒤 git add <파일> → /commit ' + scope + '".',
+function section(title, review) {
+  const lines = ['## ' + title, '']
+  if (!review) return lines.concat(['확인 못 함 - 검토 에이전트가 결과를 돌려주지 않았다.', ''])
+  if (!review.findings.length) lines.push('발견 없음.')
+  for (const f of review.findings) {
+    lines.push('### [' + f.severity + '] ' + f.file + ':' + f.line + ' - ' + f.title)
+    lines.push('근거. ' + f.evidence)
+    lines.push('재현. ' + f.repro)
+    lines.push('')
+  }
+  lines.push('P2 ' + (review.p2Count || 0) + '건.', '')
+  return lines
+}
+const reviewMd = [
+  '# review - ' + scope,
   '',
-  'JSON:',
-  JSON.stringify({ task, scope, plan: plan.summary, changedFiles: changed, lint, codeReview, a11yReview, tests, fixRound }, null, 2),
+  '작업: ' + task,
+  '계획: ' + plan.summary,
+  '',
+  ...section('동작', codeReview),
+  ...(touchesUi ? section('접근성', a11yReview) : []),
+  '## lint',
+  '',
+  lint ? (lint.passed ? '통과.' : '남은 오류: ' + lint.remaining.join('; ')) : '확인 못 함.',
+  ...(lint && lint.fixed.length ? ['고친 것: ' + lint.fixed.join('; ')] : []),
+  '',
+  '## 테스트',
+  '',
+  tests ? (tests.written.length ? ('작성 ' + tests.written.join(', ') + ' - ' + (tests.passed ? '통과' : '실패') + '. ' + tests.output) : ('미작성 - ' + tests.skipped)) : '확인 못 함.',
+  '',
+  '## 변경 파일',
+  '',
+  ...changed.map(f => '- ' + f),
+  '',
+  fixRound ? '자동 수정 1회 적용 후 재검토한 결과다.' : '',
+  '다음. 지적을 재현하고 고칠 항목을 지정한다. 고친 뒤 git add <파일> → /commit ' + scope,
+].join('\n')
+const reviewPath = '.claude/_workspace/' + scope + '/review.md'
+await agent([
+  '아래 내용을 ' + reviewPath + ' 에 그대로 쓴다. 폴더가 없으면 만든다. 한 글자도 바꾸거나 요약하지 않는다. 쓴 뒤 "저장함" 한 줄만 반환한다.',
+  '',
+  '----- 파일 내용 시작 -----',
+  reviewMd,
+  '----- 파일 내용 끝 -----',
 ].join('\n'), { label: 'report', phase: 'Report', effort: 'low' })
 
 return {
@@ -224,7 +269,6 @@ return {
   p2Count: ((codeReview && codeReview.p2Count) || 0) + ((a11yReview && a11yReview.p2Count) || 0),
   tests: tests ? { written: tests.written, passed: tests.passed, skipped: tests.skipped } : null,
   autofix: fixRound ? '적용 1회' : '미적용',
-  reviewFile: '.claude/_workspace/' + scope + '/review.md',
+  reviewFile: reviewPath,
   next: '지적을 재현하고 고칠 항목을 지정한다. 고친 뒤 git add <파일> → /commit ' + scope,
-  reportNote: typeof report === 'string' ? report.slice(0, 400) : '',
 }

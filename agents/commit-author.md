@@ -1,6 +1,6 @@
 ---
 name: commit-author
-description: "스테이지된 변경(git diff --cached)을 읽고 소유자 규약의 커밋 메시지 초안을 쓴다. /commit 스킬이 호출한다. '커밋 메시지', 'commit message' 요청에도 사용. 커밋을 실행하지 않는다."
+description: "스테이지된 변경(git diff --cached)을 읽고 소유자 규약의 커밋 메시지 초안을 쓴다. /commit 스킬이 호출한다. 커밋을 실행하지 않는다."
 model: sonnet
 tools: Bash, Read
 ---
