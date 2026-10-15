@@ -1,24 +1,23 @@
 #!/bin/bash
-# AI 코딩 에이전트 - 사용자 입력 필요 시 알림
-# Claude Code / Cursor / OpenCode 훅에서 자동 호출됨
-#
-# 환경변수:
-#   NOTIFIER_TITLE   - 알림 제목 (기본값: AI Agent)
-#   NOTIFIER_MESSAGE - 알림 메시지
-#   CLAUDE_NOTIFICATION_TITLE - Claude Code 전용 메시지 (하위 호환)
+# Notification, Stop - 사람의 확인이 필요하거나 응답이 끝났을 때 데스크톱 알림.
+# NOTIFIER_TITLE, NOTIFIER_MESSAGE 환경변수가 있으면 그것을, 없으면 훅 입력(JSON)의 message 를 쓴다.
 
-TITLE="${NOTIFIER_TITLE:-AI Agent}"
-MESSAGE="${NOTIFIER_MESSAGE:-${CLAUDE_NOTIFICATION_TITLE:-확인이 필요합니다}}"
+INPUT=$(cat)
+TITLE="${NOTIFIER_TITLE:-claude-front}"
+MESSAGE="${NOTIFIER_MESSAGE:-}"
+
+if [ -z "$MESSAGE" ] && command -v jq >/dev/null 2>&1; then
+  MESSAGE=$(printf '%s' "$INPUT" | jq -r '.message // empty' 2>/dev/null)
+fi
+MESSAGE="${MESSAGE:-확인이 필요하다}"
 
 case "$(uname -s)" in
   Darwin*)
-    # macOS: terminal-notifier 배너 알림 (macOS 15 Sequoia 호환)
     NOTIFIER=$(command -v terminal-notifier || echo "/opt/homebrew/bin/terminal-notifier")
     if [ -x "$NOTIFIER" ]; then
       "$NOTIFIER" -title "$TITLE" -message "$MESSAGE" -sound Glass
     else
-      # terminal-notifier 미설치 시 osascript 폴백
-      # 값을 argv로 바인딩(문자열 보간 금지) — AppleScript 인젝션 방지
+      # terminal-notifier 가 없으면 osascript. 값은 argv 로 넘긴다 - 문자열 보간은 인젝션이 된다.
       osascript - "$TITLE" "$MESSAGE" <<'OSA' 2>/dev/null
 on run argv
   display notification (item 2 of argv) with title (item 1 of argv) sound name "Glass"
@@ -27,12 +26,9 @@ OSA
     fi
     ;;
   Linux*)
-    # Linux: notify-send (libnotify) 사용
-    if command -v notify-send >/dev/null 2>&1; then
-      notify-send "$TITLE" "$MESSAGE" 2>/dev/null
-    fi
+    command -v notify-send >/dev/null 2>&1 && notify-send "$TITLE" "$MESSAGE" 2>/dev/null
     ;;
 esac
 
-# 터미널 벨 소리 (모든 플랫폼 공통 — 터미널 포커스 없을 때 추가 알림)
 printf '\a'
+exit 0
