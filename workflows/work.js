@@ -1,7 +1,7 @@
 export const meta = {
-  name: 'feature',
+  name: 'work',
   description: '작업 설명 하나로 계획 → 구현 → lint 게이트 → 병렬 검증(code-reviewer, a11y-checker, 단위 테스트) → review.md 까지. 수정과 커밋은 사람이 정한다',
-  whenToUse: '/feature <작업 설명>. 선택 인자: --autofix (P0, P1 을 1회 자동 수정 후 재검증), --scope <이름>. args 는 {task, autofix, scope} 객체 또는 작업 설명 문자열. 단위 테스트는 사람과 합의 없이 계획 단계의 시나리오로 쓴다 - /feature 를 돌린 것이 그 합의다',
+  whenToUse: '/work <작업 설명>. 선택 인자: --autofix (P0, P1 을 1회 자동 수정 후 재검증), --scope <이름>. args 는 {task, autofix, scope} 객체 또는 작업 설명 문자열. 단위 테스트는 사람과 합의 없이 계획 단계의 시나리오로 쓴다 - /work 를 돌린 것이 그 합의다',
   phases: [
     { title: 'Plan', detail: '코드베이스를 읽고 변경 계획과 요구사항 빈틈을 낸다' },
     { title: 'Implement', detail: '계획대로 구현한다 (에이전트 1개)' },
@@ -16,11 +16,11 @@ const input = typeof args === 'string' ? { task: args } : (args || {})
 let task = String(input.task || '').trim()
 let autofix = Boolean(input.autofix)
 let scopeArg = input.scope ? String(input.scope) : ''
-// 문자열 인자 안의 플래그도 받는다: "/feature --autofix --scope slot-list 목록 화면 추가"
+// 문자열 인자 안의 플래그도 받는다: "/work --autofix --scope slot-list 목록 화면 추가"
 if (/--autofix\b/.test(task)) { autofix = true; task = task.replace(/--autofix\b/, '').trim() }
 const scopeMatch = task.match(/--scope\s+(\S+)/)
 if (scopeMatch) { scopeArg = scopeMatch[1]; task = task.replace(/--scope\s+\S+/, '').trim() }
-if (!task) return { error: '작업 설명이 없다. /feature <작업 설명> 으로 부른다.' }
+if (!task) return { error: '작업 설명이 없다. /work <작업 설명> 으로 부른다.' }
 
 const STYLE = [
   '규칙: .claude/rules/ 의 룰이 자동으로 로드된다. 한국어로 쓰고, 하이픈만 쓴다(줄표, 가운뎃점, 이모지 금지).',
@@ -79,7 +79,7 @@ if (plan.gaps && plan.gaps.length > 0) {
     scope,
     summary: plan.summary,
     gaps: plan.gaps,
-    next: '선택지를 고르면 .claude/_workspace/' + scope + '/decisions.md 에 "- 빈틈 / 고른 것 / 이유" 한 줄씩 적고 /feature 를 다시 돌린다.',
+    next: '선택지를 고르면 .claude/_workspace/' + scope + '/decisions.md 에 "- 빈틈 / 고른 것 / 이유" 한 줄씩 적고 /work 를 다시 돌린다.',
   }
 }
 
@@ -184,7 +184,7 @@ function reviewPrompt(kind) {
 const verifyTasks = [
   () => agent(reviewPrompt('code'), { label: 'code-reviewer', phase: 'Verify', agentType: 'code-reviewer', schema: REVIEW_SCHEMA }),
   () => agent([
-    '아래 시나리오에 해당하는 순수 로직의 단위 테스트를 쓰고 돌린다. .claude/skills/test-unit/SKILL.md 의 작성 단계와 .claude/rules/testing.md 의 형식을 따른다. 시나리오 합의 단계는 생략한다 - 사용자가 /feature 로 한 번에 돌리기로 했고, 시나리오 목록은 보고서에 그대로 실려 사람이 뒤에 확인한다.',
+    '아래 시나리오에 해당하는 순수 로직의 단위 테스트를 쓰고 돌린다. .claude/skills/test-unit/SKILL.md 의 작성 단계와 .claude/rules/testing.md 의 형식을 따른다. 시나리오 합의 단계는 생략한다 - 사용자가 /work 로 한 번에 돌리기로 했고, 시나리오 목록은 보고서에 그대로 실려 사람이 뒤에 확인한다.',
     '시나리오가 비어 있거나 전부 화면으로 확인 가능한 것이면 쓰지 않고 skipped 에 이유를 적는다.',
     '대상 테스트 파일이 이미 있으면 덮어쓰지 않는다 - 기존 케이스는 그대로 두고 빠진 시나리오만 추가한다. 사람이 쓴 테스트가 사라지면 복구할 수 없다.',
     '테스트를 통과시키려고 구현을 바꾸지 않는다. 실패하면 output 에 실패 출력을 요약한다.',
