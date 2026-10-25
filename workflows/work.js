@@ -168,9 +168,9 @@ const REVIEW_SCHEMA = {
 const TEST_SCHEMA = {
   type: 'object',
   properties: {
-    written: { type: 'array', items: { type: 'string' } },
+    written: { type: 'array', items: { type: 'string' }, description: '프로젝트 루트 기준 상대 경로' },
     passed: { type: 'boolean' },
-    output: { type: 'string', description: '실패했으면 실패 출력 요약, 통과했으면 건수' },
+    output: { type: 'string', description: '실패했으면 실패 출력 요약, 통과했으면 건수. 경로는 상대 경로로' },
     skipped: { type: 'string', description: '쓰지 않은 이유 (대상이 없으면)' },
   },
   required: ['written', 'passed', 'output', 'skipped'],
