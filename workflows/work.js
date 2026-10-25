@@ -88,7 +88,7 @@ phase('Implement')
 const IMPL_SCHEMA = {
   type: 'object',
   properties: {
-    changedFiles: { type: 'array', items: { type: 'string' } },
+    changedFiles: { type: 'array', items: { type: 'string' }, description: '프로젝트 루트 기준 상대 경로' },
     notes: { type: 'string', description: '계획과 달리 한 것, 하지 못한 것' },
   },
   required: ['changedFiles', 'notes'],
@@ -160,9 +160,10 @@ const REVIEW_SCHEMA = {
       },
     },
     p2Count: { type: 'number' },
+    p2Titles: { type: 'array', items: { type: 'string' }, description: 'P2 지적의 파일:줄 - 한 줄 요약 (내용은 적지 않는다)' },
     summary: { type: 'string' },
   },
-  required: ['findings', 'p2Count', 'summary'],
+  required: ['findings', 'p2Count', 'p2Titles', 'summary'],
 }
 const TEST_SCHEMA = {
   type: 'object',
@@ -178,7 +179,7 @@ function reviewPrompt(kind) {
   return [
     'scope: ' + scope + '. 변경 범위는 git diff HEAD (첫 커밋 전이면 git diff --cached). 변경 파일: ' + changed.join(', '),
     kind === 'a11y' ? '화면 파일(tsx, css)의 접근성만 본다.' : '동작 결함과 소유자 규칙 위반을 본다. 접근성은 다른 검토자가 본다.',
-    'P0 와 P1 만 findings 에, P2 는 개수만. 지적마다 파일:줄, 근거, 재현 절차. 재현을 못 쓰는 지적은 내지 않는다. 발견이 없으면 findings 는 빈 배열.',
+    'P0 와 P1 만 findings 에, P2 는 개수와 제목(파일:줄 - 한 줄 요약)만 p2Titles 에. 지적마다 파일:줄, 근거, 재현 절차. 재현을 못 쓰는 지적은 내지 않는다. 발견이 없으면 findings 는 빈 배열.',
   ].join('\n')
 }
 const verifyTasks = [
@@ -236,7 +237,9 @@ function section(title, review) {
     lines.push('재현. ' + f.repro)
     lines.push('')
   }
-  lines.push('P2 ' + (review.p2Count || 0) + '건.', '')
+  lines.push('P2 ' + (review.p2Count || 0) + '건.')
+  for (const t of review.p2Titles || []) lines.push('- ' + t)
+  lines.push('')
   return lines
 }
 const reviewMd = [
