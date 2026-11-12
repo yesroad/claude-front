@@ -1,11 +1,11 @@
 export const meta = {
   name: 'work',
-  description: '작업 설명 하나로 계획 → 구현 → lint 게이트 → 병렬 검증(code-reviewer, a11y-checker, 단위 테스트) → review.md 까지. 수정과 커밋은 사람이 정한다',
+  description: '작업 설명 하나로 계획 → 구현 → lint 게이트 → 병렬 검증(code-reviewer, 단위 테스트) → review.md 까지. 수정과 커밋은 사람이 정한다',
   whenToUse: '/work <작업 설명>. 선택 인자: --autofix (P0, P1 을 1회 자동 수정 후 재검증), --scope <이름>. args 는 {task, autofix, scope} 객체 또는 작업 설명 문자열. 단위 테스트는 사람과 합의 없이 계획 단계의 시나리오로 쓴다 - /work 를 돌린 것이 그 합의다',
   phases: [
     { title: 'Plan', detail: '코드베이스를 읽고 변경 계획과 요구사항 빈틈을 낸다' },
     { title: 'Implement', detail: '계획대로 구현한다 (에이전트 1개)' },
-    { title: 'Verify', detail: 'lint 게이트 후 code-reviewer, a11y-checker, 단위 테스트를 병렬로' },
+    { title: 'Verify', detail: 'lint 게이트 후 code-reviewer 와 단위 테스트를 병렬로' },
     { title: 'Fix', detail: '--autofix 일 때만. P0, P1 을 1회 수정하고 다시 검토한다' },
     { title: 'Report', detail: 'review.md 를 쓰고 다음 명령을 안내한다' },
   ],
@@ -37,7 +37,6 @@ const PLAN_SCHEMA = {
     files: { type: 'array', items: { type: 'string' }, description: '만들거나 고칠 파일' },
     steps: { type: 'array', items: { type: 'string' }, description: '구현 순서' },
     scenarios: { type: 'array', items: { type: 'string' }, description: '순수 로직의 단위 테스트 시나리오 (Given-When-Then 한 줄씩, 최대 5개). 없으면 빈 배열' },
-    touchesUi: { type: 'boolean', description: 'tsx 나 css 를 바꾸는가' },
     gaps: {
       type: 'array',
       description: '요구사항이 정하지 않아 구현을 막는 빈틈. decisions.md 에 이미 정해진 것은 넣지 않는다',
@@ -52,7 +51,7 @@ const PLAN_SCHEMA = {
       },
     },
   },
-  required: ['scope', 'summary', 'files', 'steps', 'scenarios', 'touchesUi', 'gaps'],
+  required: ['scope', 'summary', 'files', 'steps', 'scenarios', 'gaps'],
 }
 const plan = await agent([
   '작업 설명을 읽고 이 저장소에서 어떻게 구현할지 계획을 낸다. 코드를 바꾸지 않는다.',
@@ -110,7 +109,6 @@ const impl = await agent([
 
 if (!impl) return { error: '구현 단계가 실패했다. git status 로 남은 변경을 확인한다.', scope }
 const changed = impl.changedFiles || []
-const touchesUi = plan.touchesUi || changed.some(f => /\.(tsx|css)$/.test(f))
 
 // ---- Verify ---------------------------------------------------------------
 phase('Verify')
@@ -124,7 +122,7 @@ const LINT_SCHEMA = {
   required: ['passed', 'fixed', 'remaining'],
 }
 const lintPrompt = [
-  '.claude/skills/lint/SKILL.md 를 읽고 그 절차대로 린트와 타입 검사를 돌려 기계적으로 판정되는 오류만 고친다.',
+  '린트와 타입 검사(package.json 의 lint, 그리고 typecheck 또는 tsc 가 든 build, 없으면 tsc --noEmit)를 돌려 컴파일러와 린터가 판정한 오류만 국소 수정한다. 패키지 매니저는 lock 파일로 정한다.',
   'any, @ts-ignore, eslint-disable 로 우회하지 않는다. 로직을 바꾸지 않는다. 같은 오류를 2회 고쳐도 남으면 remaining 에 남긴다.',
   '대상 파일: ' + changed.join(', '),
 ].join('\n')
@@ -178,7 +176,7 @@ const TEST_SCHEMA = {
 function reviewPrompt(kind) {
   return [
     'scope: ' + scope + '. 변경 범위는 git diff HEAD (첫 커밋 전이면 git diff --cached). 변경 파일: ' + changed.join(', '),
-    kind === 'a11y' ? '화면 파일(tsx, css)의 접근성만 본다.' : '동작 결함과 소유자 규칙 위반을 본다. 접근성은 다른 검토자가 본다.',
+    '동작 결함, 소유자 규칙 위반, 화면이 바뀌었으면 접근성까지 본다.',
     'P0 와 P1 만 findings 에, P2 는 개수와 제목(파일:줄 - 한 줄 요약)만 p2Titles 에. 지적마다 파일:줄, 근거, 재현 절차. 재현을 못 쓰는 지적은 내지 않는다. 발견이 없으면 findings 는 빈 배열.',
   ].join('\n')
 }
@@ -193,12 +191,9 @@ const verifyTasks = [
     '시나리오:', ...(plan.scenarios.length ? plan.scenarios.map(s => '- ' + s) : ['- (없음)']),
   ].join('\n'), { label: 'test-unit', phase: 'Verify', schema: TEST_SCHEMA }),
 ]
-if (touchesUi) {
-  verifyTasks.push(() => agent(reviewPrompt('a11y'), { label: 'a11y-checker', phase: 'Verify', agentType: 'a11y-checker', schema: REVIEW_SCHEMA }))
-}
 // 검토자는 읽기 전용이고 테스트 작성은 새 파일만 만들므로 동시에 돌려도 충돌하지 않는다. 보고서에 전부 필요하므로 barrier.
-let [codeReview, tests, a11yReview] = await parallel(verifyTasks)
-let findings = [...((codeReview && codeReview.findings) || []), ...((a11yReview && a11yReview.findings) || [])]
+let [codeReview, tests] = await parallel(verifyTasks)
+let findings = (codeReview && codeReview.findings) || []
 log('검토 지적 P0/P1 ' + findings.length + '건, 테스트 ' + (tests ? (tests.passed ? '통과' : '실패 또는 미작성') : '없음'))
 
 // ---- Fix (옵션, 1회) --------------------------------------------------------
@@ -214,12 +209,10 @@ if (autofix && findings.length > 0) {
   const relint = await agent(lintPrompt, { label: 'lint (재검사)', phase: 'Fix', schema: LINT_SCHEMA, effort: 'low' })
   const again = '\n직전 지적이 해소됐는지 먼저 확인하고, 새로 생긴 문제만 추가로 적는다.'
   const reTasks = [() => agent(reviewPrompt('code') + again, { label: 'code-reviewer (재검토)', phase: 'Fix', agentType: 'code-reviewer', schema: REVIEW_SCHEMA })]
-  if (touchesUi) reTasks.push(() => agent(reviewPrompt('a11y') + again, { label: 'a11y-checker (재검토)', phase: 'Fix', agentType: 'a11y-checker', schema: REVIEW_SCHEMA }))
-  const [reCode, reA11y] = await parallel(reTasks)
-  // 재검토 결과가 있으면 그것으로 교체하고, 없으면(에이전트 실패) 이전 지적을 유지한다. 접근성 지적은 따로 유지한다.
+  const [reCode] = await parallel(reTasks)
+  // 재검토 결과가 있으면 그것으로 교체하고, 없으면(에이전트 실패) 이전 지적을 유지한다.
   codeReview = reCode || codeReview
-  if (touchesUi) a11yReview = reA11y || a11yReview
-  findings = [...((codeReview && codeReview.findings) || []), ...((a11yReview && a11yReview.findings) || [])]
+  findings = (codeReview && codeReview.findings) || []
   fixRound = { fixed: fix, lint: relint }
   log('자동 수정 후 남은 지적 ' + findings.length + '건')
 }
@@ -249,7 +242,6 @@ const reviewMd = [
   '계획: ' + plan.summary,
   '',
   ...section('동작', codeReview),
-  ...(touchesUi ? section('접근성', a11yReview) : []),
   '## lint',
   '',
   lint ? (lint.passed ? '통과.' : '남은 오류: ' + lint.remaining.join('; ')) : '확인 못 함.',
@@ -281,7 +273,7 @@ return {
   changedFiles: changed,
   lint: lint ? { passed: lint.passed, remaining: lint.remaining } : null,
   findings,
-  p2Count: ((codeReview && codeReview.p2Count) || 0) + ((a11yReview && a11yReview.p2Count) || 0),
+  p2Count: (codeReview && codeReview.p2Count) || 0,
   tests: tests ? { written: tests.written, passed: tests.passed, skipped: tests.skipped } : null,
   autofix: fixRound ? '적용 1회' : '미적용',
   reviewFile: reviewPath,
