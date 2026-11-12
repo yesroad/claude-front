@@ -7,7 +7,7 @@ git clone https://github.com/yesroad/claude-front.git .claude
 echo ".claude/" >> .gitignore
 ```
 
-프로젝트 설정은 `.claude/settings.local.json`에 둔다. 세션 시작 훅이 12시간 간격으로 pull 하고, 바로 받으려면 `git -C .claude pull`.
+프로젝트 설정은 `.claude/settings.local.json`에 둔다. 업데이트는 `git -C .claude pull`.
 
 ## 구조
 
@@ -38,11 +38,7 @@ echo ".claude/" >> .gitignore
 │   └── commit-author.md     // sonnet - 커밋 메시지 초안
 ├── workflows/
 │   └── work.js              // /work <작업> - 계획 → 구현 → 게이트 → 검토 → review.md
-├── hooks/
-│   ├── auto-pull.sh         // SessionStart - clone 갱신
-│   ├── guard-pretool.sh     // PreToolUse - 위험 Bash 차단
-│   └── notify.sh            // Notification, Stop - 알림
-├── settings.json            // 훅 등록, 기본 권한
+├── settings.json            // 기본 허용 권한
 └── _workspace/<scope>/      // review.md, commit-draft.md, decisions.md
 ```
 
@@ -62,4 +58,3 @@ echo ".claude/" >> .gitignore
 ```
 
 끝나면 `_workspace/<scope>/review.md`의 지적을 재현해 고칠 것을 지정하고, `git add <파일>` → `/commit <scope>`. 빈틈 선택지가 돌아오면 번호를 고르면 `decisions.md`에 기록하고 다시 돌린다.
-- 훅은 매번 돈다. 위험 명령은 실행 전에 막히고, 권한 요청과 응답 완료는 알림으로 온다.
