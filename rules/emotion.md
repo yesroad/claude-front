@@ -11,8 +11,7 @@ paths:
 - 일회성 스타일은 `css` prop 으로, 재사용 컴포넌트는 `styled`로 만든다 - 한 번 쓰는 조정에 `styled`를 만들면 이름만 늘고 재사용은 생기지 않는다.
 - 스타일은 컴포넌트 파일에서 분리해 `*.styles.ts`에 둔다. 컴포넌트 파일은 그것을 import 해서 쓴다 - 컴포넌트 파일에 구조와 동작만 남아 diff 가 읽힌다.
 - 변형(variant)은 객체 맵으로 둔다. 템플릿 문자열 안에 삼항 분기를 넣지 않는다 - 조합이 늘수록 템플릿은 읽을 수 없고, 맵은 빠진 키를 타입이 잡는다.
-- 색과 간격은 `theme` 토큰만 쓴다. 색상값과 간격 숫자를 직접 적지 않는다 - 하드코딩된 값은 테마 전환과 일괄 수정에서 빠진다.
-- `!important`를 쓰지 않는다. 특이성이 모자라면 `&&`로 셀렉터를 겹친다 - `!important`는 다음 사람이 덮어쓸 방법이 없다.
+- 특이성이 모자라면 `!important` 대신 `&&`로 셀렉터를 겹친다.
 - `*.styles.ts`를 import 하는 컴포넌트와 `CacheProvider` 레지스트리는 `'use client'` 안에 둔다. Server Component 에서는 `css` prop 도 `styled`도 쓰지 않는다 - `@emotion/react`는 로드 시점에 `createContext`를 부르고 `react-server` 빌드가 없어 RSC 레이어에서 에러가 난다.
 
 ## 틀리기 쉬운 것 (2026-10 기준)

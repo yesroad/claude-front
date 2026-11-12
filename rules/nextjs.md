@@ -12,10 +12,8 @@ paths:
 - Next.js 작업 전에 `node_modules/next/dist/docs/`에서 해당 문서를 찾아 읽는다 - 설치된 버전과 일치하는 1차 문서라 학습 데이터와 스킬보다 정확하다.
 - `page.tsx`는 얇게 쓴다. 데이터를 로드해 view 컴포넌트에 넘기는 조립만 하고 화면을 직접 그리지 않는다 - 화면은 라우트 없이 렌더하고 테스트할 수 있어야 한다.
 - 서버 컴포넌트는 서비스 함수를 `await` 해서 데이터를 받는다. fetch 와 쿼리 로직은 컴포넌트 밖에 둔다 - 어디서 무엇을 가져오는지가 한 곳에 모여야 캐시 태그와 재검증을 추적할 수 있다.
-- 같은 요청 안에서 반복되는 호출은 서비스 함수를 `React.cache`로 감싸 한 번만 실행한다 - layout, page, `generateMetadata`가 같은 데이터를 따로 부른다.
 - `cacheComponents: true`면 캐시는 `'use cache'`와 `cacheLife`/`cacheTag`로만 명시하고, 요청 시점 데이터(`cookies()`, 캐시하지 않은 fetch)는 `<Suspense>` 경계 안에서 읽는다 - 캐시는 전부 opt-in 이고, 경계 밖의 요청 시점 데이터는 빌드 에러다.
 - `params`, `searchParams`, `cookies()`, `headers()`, `draftMode()`는 `await` 한다 - 16 에서 동기 접근이 제거됐고, `opengraph-image`/`icon`의 `params`와 `id`, `sitemap`의 `id`도 Promise 로 온다.
-- RSC 에서 클라이언트 컴포넌트로 넘기는 props 는 최소로 한다 - 넘긴 값은 전부 직렬화되어 HTML 에 실리고 브라우저에 노출된다.
 
 ## 틀리기 쉬운 것 (2026-10 기준)
 

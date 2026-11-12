@@ -7,7 +7,6 @@ paths:
 
 - 토큰은 `@theme`, 커스텀 유틸은 `@utility`, 변형은 `@custom-variant`로 CSS 에 둔다. `tailwind.config.js`를 새로 만들지 않는다 - 설정이 두 곳이면 어느 쪽이 적용됐는지 추적이 안 된다.
 - 다른 변수를 참조하는 토큰(`--color-primary: var(--brand)`)은 `@theme inline`에 둔다 - 일반 `@theme`은 `var(--brand)`를 `:root`에서 계산해 하위 요소에서 바꾼 값이 반영되지 않는다.
-- 색, 간격, 포커스 링은 `@theme` 토큰 한 곳에 둔다. 임의 값 클래스(`bg-[#2563eb]`, `p-[13px]`)를 남발하지 않는다 - 토큰에 없는 값은 검색도 일괄 교체도 안 된다.
 - 포커스 표시를 지우면(`outline-hidden`) `focus-visible:`에 대체 링을 토큰 색과 명시한 폭으로 준다 - `ring` 기본이 3px 파랑에서 1px currentColor 로 바뀌어 `ring`만 쓰면 거의 보이지 않는다.
 - `@tailwind base` 지시어나 `tailwindcss@3`이 보이는 v3 프로젝트는 이 룰의 대상이 아니다. v4 문법을 섞지 않고 사용자에게 알린다 - 두 문법은 호환되지 않고 업그레이드는 사용자가 정할 일이다.
 
