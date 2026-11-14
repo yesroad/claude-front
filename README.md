@@ -27,7 +27,7 @@ echo ".claude/" >> .gitignore
 ├── skills/
 │   ├── check/               // /check [scope] - lint 게이트 → code-reviewer → review.md
 │   ├── commit/              // /commit [scope] - 게이트 → 메시지 초안 → 확인 → 커밋
-│   ├── test-unit/           // /test-unit [대상] - 순수 로직
+│   ├── test/                // /test [대상] - 단위, 통합, E2E 중 골라 references/ 를 읽고 작성
 │   └── web-design/          // /web-design [화면] - 목업 → 토큰 → 구현 → QA
 ├── agents/                  // 읽기 전용. 스킬이 부른다
 │   └── code-reviewer.md     // opus - 동작 결함, 규칙 위반, 접근성
