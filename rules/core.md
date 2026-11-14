@@ -21,4 +21,4 @@
 
 ## 진입점
 
-- 검토 `/check`, 커밋 `/commit`, 테스트 `/test-unit`, 화면 `/web-design`, 계획부터 검토까지 한 번에 `/work`. 버그 사냥은 내장 `/code-review`, 정리는 `/simplify`.
+- 검토 `/check`, 커밋 `/commit`, 테스트 `/test-unit`, 화면 `/web-design`. 버그 사냥은 내장 `/code-review`, 정리는 `/simplify`.
