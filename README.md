@@ -15,15 +15,9 @@ echo ".claude/" >> .gitignore
 .claude/
 ├── rules/                   // paths 가 맞는 파일을 다룰 때만 로드. core 만 항상
 │   ├── core.md              // 판단 경계, 표기, git 규약
-│   ├── react.md             // *.tsx
-│   ├── typescript.md        // *.ts, *.tsx
-│   ├── nextjs.md            // app/**, proxy.ts, next.config
-│   ├── testing.md           // *.test.*, vitest, playwright config
-│   ├── tailwind-v4.md       // *.css, postcss.config
-│   ├── emotion.md           // *.styles.ts, styled.ts, registry, theme
-│   ├── tanstack-query.md    // queries/**, *.query.ts
-│   ├── zod-v4.md            // schemas/**, *.schema.ts
-│   └── react-hook-form.md   // forms/**, *.form.tsx
+│   ├── react.md             // *.tsx, *.css, *.styles.ts - 화면, 폼, 스타일 규칙
+│   ├── typescript.md        // *.ts, *.tsx - 타입, 네이밍, 스키마, 쿼리 위치
+│   └── testing.md           // *.test.*, *.spec.* - 테스트 형식과 단언
 ├── skills/
 │   ├── check/               // /check [scope] - lint 게이트 → code-reviewer → review.md
 │   ├── commit/              // /commit [scope] - 게이트 → 메시지 초안 → 확인 → 커밋
